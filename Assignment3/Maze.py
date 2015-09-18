@@ -37,7 +37,7 @@ class Node(object):
 			self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1])
 		elif h == 2:
 			hCost = 0
-			if isMountain == 1 and worldMaze[self.location[0]][self.location[1]] == 1:
+			if isMountain == 1 and worldMaze[self.location[0] - 1][self.location[1] + 1] == 1:
 				hCost += 100
 			elif isMountain == 1 and stepDistance == 2:
 				hCost -= 10

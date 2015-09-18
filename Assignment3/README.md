@@ -18,7 +18,7 @@ still put into place because it provides a logical movement that moving diagonal
 cheaper than 2 horizontal/vertical moves.
 ```
 hCost = 0
-if isMountain == 1 and worldMaze[self.location[0]][self.location[1]] == 1:
+if isMountain == 1 and worldMaze[self.location[0] - 1][self.location[1] + 1] == 1:
 	hCost += 100
 elif isMountain == 1 and stepDistance == 2: # stepDistance == 2 signifies a diagonal move
 	# Previously added 10 since it was a mountain, so line below is just resetting the cost.
@@ -49,13 +49,22 @@ on the fact that objects are irrelevant under certain circumstances and do not a
 have to be considered.
 
 ### Performance and Results
-My custom heuristic tied with the Manhattan heuristic in world 1 (although it evaluated 1 less node).
+My custom heuristic tied with the Manhattan heuristic in world 1.
 This is because my heuristic still uses the Manhattan as a base to make sure diagonals are preferred, and
 world 1 is not suited to my heuristics advantage. World 1 contains no areas in which two diagonal mountains
-are next to each other nor do mountains really get in the way in world 1 of the already optimal path. In world 2, my heuristic did indeed outperform by a cost of 2 and it evaluated 6 less nodes. While the advantage did
-not arise because we ignored a mountain, it arose because we avoided doing a double diagonal mountain move
-that the orignal Manhattan heuristic made. Ultimately, I am confident that my custom heuristic will outperform
-the Manhattan heuristic in all aspects simply because it modifies the original manhattan in an important way.
+are next to each other nor do mountains really get in the way in world 1 of the already optimal path. 
+In world 2, my heuristic was worse off than the manhattan, it had a cost greater by 2 and it evaluated
+the same number of nodes. The reason that my modified custom heuristic performed worse, was because
+my penalty for taking two mountains was too great, and my reward for taking a mountain path was also 
+too large. In other words, my custom heuristic avoided a path with 2 mountains which actually would 
+have given us a score of 144, instead of 146. And it avoided taking a path with no mountains
+because it disregarded them completely, even though we would have had a score of 142 instead of 146.
+To improve my heuristic, I should lower the penalty on taking two diagonal mountain moves in a row
+and find the optimal penalty. Additionally, I should not completely disregard mountain diagonal moves
+and should only disregard them when the only other option is 2 horizontal and 2 vertical moves, because
+currently, I treat a regular diagonal move the same as a mountain diagonal move. So I should simply lower
+the reward for taking a diagonal mountain, possibly only subtracting -5 instead of completely ignoring it.
+
 
 
 ## Output Of Maze.py
@@ -105,7 +114,7 @@ Heuristic: Custom
 
 Total Heuristic cost:  211
 Total Cost:  130
-Nodes Evaluted:  61
+Nodes Evaluted:  62
 
 Path:
 (7, 0) with heuristic cost 0
@@ -176,34 +185,33 @@ X X X 0 0 0 0 0 0 0
 
 Heuristic: Custom
 
-Total Heuristic cost:  234
-Total Cost:  142
-Nodes Evaluted:  54
+Total Heuristic cost:  228
+Total Cost:  146
+Nodes Evaluted:  60
 
 Path:
 (7, 0) with heuristic cost 0
-(6, 0) with heuristic cost 25
-(5, 0) with heuristic cost 49
-(4, 1) with heuristic cost 75
-(4, 2) with heuristic cost 96
-(4, 3) with heuristic cost 116
-(3, 4) with heuristic cost 137
-(2, 4) with heuristic cost 154
-(1, 4) with heuristic cost 170
-(0, 5) with heuristic cost 188
-(0, 6) with heuristic cost 201
-(0, 7) with heuristic cost 213
-(0, 8) with heuristic cost 224
-(0, 9) with heuristic cost 234
+(7, 1) with heuristic cost 25
+(7, 2) with heuristic cost 49
+(7, 3) with heuristic cost 72
+(7, 4) with heuristic cost 94
+(7, 5) with heuristic cost 115
+(6, 6) with heuristic cost 138
+(5, 7) with heuristic cost 159
+(4, 8) with heuristic cost 178
+(3, 9) with heuristic cost 195
+(2, 9) with heuristic cost 207
+(1, 9) with heuristic cost 218
+(0, 9) with heuristic cost 228
 
 Path:
-0 0 0 0 0 X X X X X
-2 2 1 1 X 2 2 1 1 0
-0 0 0 0 X 2 2 1 1 0
-2 2 2 2 X 0 0 1 1 0
-0 X X X 0 2 1 1 1 0
-X 2 2 0 2 2 0 0 2 0
-X 0 2 0 1 2 0 1 2 2
-X 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 X
+2 2 1 1 0 2 2 1 1 X
+0 0 0 0 0 2 2 1 1 X
+2 2 2 2 0 0 0 1 1 X
+0 0 0 0 0 2 1 1 X 0
+0 2 2 0 2 2 0 X 2 0
+0 0 2 0 1 2 X 1 2 2
+X X X X X X 0 0 0 0
 
 -----------------------------------
