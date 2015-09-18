@@ -5,7 +5,7 @@ Execute the following command:
 ```
 python Maze.py <fileName> <heuristic>
 ```
-<heuristic> is either a 1 to represent the Manhattan Heuristic 
+heuristic arg is either a 1 to represent the Manhattan Heuristic 
 or 2 to represent my Custom Heuristic
 
 
@@ -64,6 +64,11 @@ and find the optimal penalty. Additionally, I should not completely disregard mo
 and should only disregard them when the only other option is 2 horizontal and 2 vertical moves, because
 currently, I treat a regular diagonal move the same as a mountain diagonal move. So I should simply lower
 the reward for taking a diagonal mountain, possibly only subtracting -5 instead of completely ignoring it.
+I am very confident that with some tuning and tweaking that my custom heuristic would outperform
+the manhattan heuristic since it would consider the fact that 4 straight moves is less preferable than
+2 diagonal moves even when a mountain exists (should no non-mountain diagonal option exist). But my error
+in thinking is currently evident, because my heuristic does not prefer a non-mountain diagonal move 
+to a mountain diagonal move.
 
 
 
