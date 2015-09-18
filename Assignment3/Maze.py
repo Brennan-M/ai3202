@@ -3,6 +3,7 @@
 # By Brennan McConnell
 
 import sys
+import math
 
 # Node Class used in our Maze Solver
 class Node(object):
@@ -21,7 +22,7 @@ class Node(object):
 	def getParent(self):
 		return self.parent
 
-	def setDistanceToStart(self, h, isMountain, endP):
+	def setDistanceToStart(self, h, isMountain, endP, worldMaze):
 		pLoc = self.parent.getLocation()
 		stepDistance = abs(pLoc[0] - self.location[0]) + abs(pLoc[1] - self.location[1])
 		if stepDistance == 1:
@@ -34,6 +35,14 @@ class Node(object):
 
 		if h == 1:
 			self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1])
+		elif h == 2:
+			hCost = 0
+			if isMountain == 1 and worldMaze[self.location[0]][self.location[1]] == 1:
+				hCost += 100
+			elif isMountain == 1:
+				hCost -= 10
+			self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1]) + hCost
+
 
 	def setParent(self, pNode):
 		self.parent = pNode
@@ -43,27 +52,28 @@ class Node(object):
 def solveMaze(worldMaze, heuristic):
 	endPosition = (0, len(worldMaze[0]) - 1)
 
-	start = (len(worldMaze) - 1, 0) #Assigns our starting index to the bottom left
+	start = (len(worldMaze) - 1, 0) # Assigns our starting index to the bottom left
 	startNode = Node(start, 0)
 
 	openOptions = []
 	visited = {}
 	openOptions.append(startNode)
-	count = 0
+	count = 1
 
 	while (len(openOptions) > 0):
 
 		tempNode = getMinimumNode(openOptions)
-		visited[tempNode.getLocation()] = True
-		count += 1
 		
 		for node in openOptions:
 			if node.getLocation() == tempNode.getLocation():
 				openOptions.remove(node)
+				break
+
 
 		if (tempNode.getLocation() != endPosition):
 
 			currentLocation = tempNode.getLocation()
+			visited[currentLocation] = True
 
 			for i in range(currentLocation[0] - 1, currentLocation[0] + 2):
 				for j in range(currentLocation[1] - 1, currentLocation[1] + 2):
@@ -72,20 +82,23 @@ def solveMaze(worldMaze, heuristic):
 						if (j >= 0 and j < len(worldMaze[0])):
 							if (visited.get((i,j), False) != True): # We have not visited it yet
 								if (worldMaze[i][j] != 2):
+
 									adjNode = Node((i,j))
 									adjNode.setParent(tempNode)
-									adjNode.setDistanceToStart(heuristic, worldMaze[i][j], endPosition)
+									adjNode.setDistanceToStart(heuristic, worldMaze[i][j], endPosition, worldMaze)
 									
 									alterExisting = False
 									for node in openOptions:
 										if node.getLocation() == (i,j):
+											alterExisting = True
 											if node.getDistanceToStart() > adjNode.getDistanceToStart():
-												alterExisting = True
-												break
+												node.distanceToStart = adjNode.getDistanceToStart()
+											break
+												
 
-									if alterExisting == True:
-										node.distanceToStart = adjNode.getDistanceToStart()
-									else:
+									if alterExisting == False:
+										# If we add a node to our array, we have evaluated a node.
+										count += 1
 										openOptions.append(adjNode)
 
 		else:
