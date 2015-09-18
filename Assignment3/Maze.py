@@ -38,7 +38,7 @@ class Node(object):
 		elif h == 2:
 			hCost = 0
 			if isMountain == 1 and worldMaze[self.location[0] - 1][self.location[1] + 1] == 1:
-				hCost += 100
+				hCost += 20 # Add back in the cost of two mountains for this path
 			elif isMountain == 1 and stepDistance == 2:
 				hCost -= 10
 			self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1]) + hCost

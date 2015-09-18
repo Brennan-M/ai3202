@@ -19,10 +19,10 @@ cheaper than 2 horizontal/vertical moves.
 ```
 hCost = 0
 if isMountain == 1 and worldMaze[self.location[0] - 1][self.location[1] + 1] == 1:
-	hCost += 100
+	hCost += 20 # Penalize them based on 2 mountains occuring (10*2)
 elif isMountain == 1 and stepDistance == 2: # stepDistance == 2 signifies a diagonal move
 	# Previously added 10 since it was a mountain, so line below is just resetting the cost.
-	hCost -= 10
+	hCost -= 10 
 self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1]) + hCost
 ```
 As can be seen above, when moving diagonally, mountains will be ignored except for the case
