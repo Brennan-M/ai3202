@@ -1,4 +1,5 @@
 # CSCI 3202: Artificial Intelligence - Assignment 3
+# By Brennan McConnell
 ## Running Maze.py
 Execute the following command:
 ```
