@@ -11,8 +11,8 @@ or 2 to represent my Custom Heuristic
 
 ## My heuristic
 ### Equations and Logistics
-My heuristic is very straightforward and logical. Simply put, a mountain is ignored
-unless the next diagonal move beyond that is also a mountain in which case a very 
+My heuristic is very straightforward and logical. Simply put, a mountain is ignored when moving
+diagonally unless the next diagonal move beyond that is also a mountain in which case a very 
 large penalty occurs. On top of this, the original Manhattan heuristic is also 
 still put into place because it provides a logical movement that moving diagonal is 
 cheaper than 2 horizontal/vertical moves.
@@ -20,14 +20,16 @@ cheaper than 2 horizontal/vertical moves.
 hCost = 0
 if isMountain == 1 and worldMaze[self.location[0]][self.location[1]] == 1:
 	hCost += 100
-elif isMountain == 1 and stepDistance == 2:
+elif isMountain == 1 and stepDistance == 2: # stepDistance == 2 signifies a diagonal move
 	# Previously added 10 since it was a mountain, so line below is just resetting the cost.
 	hCost -= 10
 self.distanceToStart += abs(endP[0] - self.location[0]) + abs(endP[1] - self.location[1]) + hCost
 ```
 As can be seen above, when moving diagonally, mountains will be ignored except for the case
 in which two diagonal mountains occur in a row. And diagonal moves are still preferred over
-horizontal and vertical moves through the Manhattan Heuristic.
+horizontal and vertical moves through the Manhattan Heuristic. It is important to note 
+that mountains are not ignored when moving vertically and horizontally, because this would be
+ignorant.
 
 ### Motivation and Reasoning
 The reason I chose my heuristic is simply based on the fact that the penalty incurred
