@@ -5,21 +5,25 @@
 import sys
 import math
 
-EXIT_STATE = "*"
+DISCOUNT = 0.9
 
 # Node Class used in our Maze Solver
 class Node(object):
 
 	def __init__(self, location, value):
 		self.location = location
-		self.obstacle = obstacle
+		self.value = value
 
 		if value == 50:
 			self.utility = 50
-			self.optimalMove = EXIT_STATE
+			self.optimalMove = "*"
+			self.reward = 0
 		else:
 			self.utility = 0
 			self.optimalMove = None
+
+			if (value == 2):
+				self.optimalMove = "No Direction" # Let 'W' represent Wall
 
 			if (value == 1):
 				self.reward = -1
@@ -27,6 +31,8 @@ class Node(object):
 				self.reward = -2
 			elif (value == 4):
 				self.reward = 1
+			else:
+				self.reward = 0
 
 
 	def getLocation(self):
@@ -41,11 +47,11 @@ class Node(object):
 	def getUtility(self):
 		return self.utility
 
+	def getObstacle(self):
+		return self.value
+
 	def setOptimalMove(self, direction):
 		self.optimalMove = direction
-
-	def setReward(self, reward):
-		self.reward = reward
 
 	def setUtility(self, utility):
 		self.utility = utility
@@ -55,73 +61,17 @@ class Node(object):
 			return 1
 		elif self.utility < ntc.getUtility():
 			return -1
-		elif self.utility = None:
-			if ntc.getUtility() = None:
+		elif self.utility == None:
+			if ntc.getUtility() == None:
 				return 0
 			else:
 				return -1
-		elif ntc.getUtility() = None:
+		elif ntc.getUtility() == None:
 			return 1
 		return 0
 
-
-def solveMaze(worldMaze, heuristic):
-	endPosition = (0, len(worldMaze[0]) - 1)
-
-	start = (len(worldMaze) - 1, 0) # Assigns our starting index to the bottom left
-	startNode = Node(start, 0)
-
-	openOptions = []
-	visited = {}
-	openOptions.append(startNode)
-	count = 1
-
-	while (len(openOptions) > 0):
-
-		tempNode = getMinimumNode(openOptions)
-		
-		for node in openOptions:
-			if node.getLocation() == tempNode.getLocation():
-				openOptions.remove(node)
-				break
-
-
-		if (tempNode.getLocation() != endPosition):
-
-			currentLocation = tempNode.getLocation()
-			visited[currentLocation] = True
-
-			for i in range(currentLocation[0] - 1, currentLocation[0] + 2):
-				for j in range(currentLocation[1] - 1, currentLocation[1] + 2):
-					
-					if (i >= 0 and i < len(worldMaze)):
-						if (j >= 0 and j < len(worldMaze[0])):
-							if (visited.get((i,j), False) != True): # We have not visited it yet
-								if (worldMaze[i][j] != 2):
-
-									adjNode = Node((i,j))
-									adjNode.setParent(tempNode)
-									adjNode.setDistanceToStart(heuristic, worldMaze[i][j], endPosition, worldMaze)
-									
-									alterExisting = False
-									for node in openOptions:
-										if node.getLocation() == (i,j):
-											alterExisting = True
-											if node.getDistanceToStart() > adjNode.getDistanceToStart():
-												node.distanceToStart = adjNode.getDistanceToStart()
-											break
-												
-
-									if alterExisting == False:
-										# If we add a node to our array, we have evaluated a node.
-										count += 1
-										openOptions.append(adjNode)
-
-		else:
-			traceInformation(tempNode, worldMaze, count)
-			return
-
-	print "no Solution Found"
+	def __str__(self):
+		return (str(self.location)) + " - Utility: " + str(self.utility) + " - Direction: " + self.optimalMove
 
 
 # We are forced to assume valid file input.
@@ -153,69 +103,98 @@ def getArgs():
 
 def constructWorld(fileName):
 	worldMaze = []
-	worldFile = open(fileName, "r")
-	for line in worldFile:
-		worldMaze.append([int(i) for i in line.split()])
-
+	worldFile = open(fileName, "r").readlines()
+	for line in reversed(worldFile):
+		worldMaze.append(line.split(" "))
 
 	nodeMaze = []
-	for i in range(len(world)):
+	for i in range(len(worldMaze)):
 		nodeMaze.append([])
-		for j in range(len(world[i])):
-			nodeMaze[i].append(Node((i, j), worldMaze[i][j]))
+		for j in range(len(worldMaze[i])):
+			nodeMaze[i].append(Node((j, i), int(worldMaze[i][j])))
 
 	return nodeMaze
 
 
-def printMaze(worldMaze):
-	print("Path:")
-	for i in worldMaze:
-		tmpArr = [str(x) for x in i]
-		print " ".join(tmpArr)
+# This function uses value iteration to implement MDP of our maze
+def setOverallOptimalMoves(worldMaze, epsilon):
+	delta = float("inf")
+	while (delta > epsilon * (1-DISCOUNT)/DISCOUNT):
+		delta = 0
+		for i in range(len(worldMaze)-1, -1, -1):
+			for j in range(len(worldMaze[i])-1, -1, -1):
+				tempDelta = evaluateUtility(i, j, worldMaze)
+				if tempDelta > delta:
+					delta = tempDelta
 
 
+	print ("Finished calculations...\n")
 
 
-# def traceInformation(node, maze, count):
-# 	cost = 0
-# 	path = []
-# 	heuristicTrace = []
+def evaluateUtility(i, j, world):
+	node = world[i][j]
+	index_obstacle = node.getObstacle()
 
-# 	print "\nTotal Heuristic cost: ", node.getDistanceToStart()
-	
-# 	tmp_ptr = node
-# 	while (tmp_ptr):
-# 		path.append(tmp_ptr.getLocation())
-# 		if not tmp_ptr.getParent() == None:
-# 			stepDistance = abs(tmp_ptr.getParent().getLocation()[0] - tmp_ptr.getLocation()[0]) + abs(tmp_ptr.getParent().getLocation()[1] - tmp_ptr.getLocation()[1])
-# 			if stepDistance == 1:
-# 				cost += 10
-# 			elif stepDistance == 2:
-# 				cost += 14
-# 			if worldMaze[tmp_ptr.getLocation()[0]][tmp_ptr.getLocation()[1]] == 1:
-# 				cost += 10
-# 			heuristicTrace.append(tmp_ptr.getDistanceToStart())
-# 		tmp_ptr = tmp_ptr.getParent()
+	if index_obstacle == 50 or index_obstacle == 2:
+		return None
 
-# 	heuristicTrace.append(0)
+	# Must do bounds checking and then get the utilities of the s' around us
+	if (i - 1) < 0:
+		utilityDown = 0
+	else:
+		utilityDown = (world[i-1][j]).getUtility()
 
-# 	print "Total Cost: ", cost
-# 	print "Nodes Evaluted: ", count
+	if (i + 1) >= len(worldMaze):
+		utilityUp = 0
+	else:
+		utilityUp = (world[i+1][j]).getUtility()
 
-# 	print "\nPath:"
-# 	for i in range(len(path) - 1, -1, -1):
-# 		print path[i], "with heuristic cost", heuristicTrace[i]
-# 	print("")
+	if (j - 1) < 0:
+		utilityLeft = 0
+	else:
+		utilityLeft = (world[i][j-1]).getUtility()
 
-# 	for x,y in path:
-# 		maze[x][y] = 'X'
+	if (j+1) >= len(worldMaze[i]):
+		utilityRight = 0
+	else:
+		utilityRight = (world[i][j+1]).getUtility()
 
-# 	printMaze(maze)
+	upMoveUtility = ((0.8 * utilityUp + 0.1 * utilityLeft + 0.1 * utilityRight), "U")
+	downMoveUtility = ((0.8 * utilityDown + 0.1 * utilityRight + 0.1 * utilityLeft), "D")
+	rightMoveUtility = ((0.8 * utilityRight + 0.1 * utilityDown + 0.1 * utilityUp), "R")
+	leftMoveUtility = ((0.8 * utilityLeft + 0.1 * utilityUp + 0.1 * utilityDown), "L")
 
+	currentNodeUtility = node.getUtility()
+	optimalUtility = max(upMoveUtility, downMoveUtility, rightMoveUtility, leftMoveUtility)
+	node.setUtility(float(node.getReward() + DISCOUNT * optimalUtility[0]))
+	node.setOptimalMove(optimalUtility[1])
+
+	return abs(currentNodeUtility - node.getUtility())
+
+
+def findOptimalPath(maze):
+	print("Optimal Path:")
+	print("Coordinates in (x, y) format.")
+	i = 0
+	j = 0
+	currentNode = maze[i][j]
+	while (currentNode.getOptimalMove() != "*"):
+		print currentNode
+		optMove = currentNode.getOptimalMove()
+		if optMove == "U":
+			i += 1
+		elif optMove == "D":
+			i -= 1
+		elif optMove == "R":
+			j += 1
+		elif optMove == "L":
+			j -= 1
+		currentNode = maze[i][j]
 
 if __name__ == "__main__":
 	(worldMaze, epsilon) = getArgs()
-	solveMaze(worldMaze, epsilon)
+	setOverallOptimalMoves(worldMaze, epsilon)
+	findOptimalPath(worldMaze)
 	print ("\n-----------------------------------\n")
 
 
