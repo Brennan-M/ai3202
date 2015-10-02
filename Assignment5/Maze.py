@@ -150,19 +150,30 @@ def getArgs():
 	print "\nSolving the maze with episolon value:", epsilon
 	return (worldMaze, epsilon)
 
+
 def constructWorld(fileName):
 	worldMaze = []
 	worldFile = open(fileName, "r")
 	for line in worldFile:
 		worldMaze.append([int(i) for i in line.split()])
 
-	return worldMaze
+
+	nodeMaze = []
+	for i in range(len(world)):
+		nodeMaze.append([])
+		for j in range(len(world[i])):
+			nodeMaze[i].append(Node((i, j), worldMaze[i][j]))
+
+	return nodeMaze
+
 
 def printMaze(worldMaze):
 	print("Path:")
 	for i in worldMaze:
 		tmpArr = [str(x) for x in i]
 		print " ".join(tmpArr)
+
+
 
 
 # def traceInformation(node, maze, count):
