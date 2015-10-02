@@ -101,7 +101,7 @@ def getArgs():
 	if (epsilon < 0):
 		print("Epsilon cannot be less than 0, using Default.")
 
-	print "\nSolving the maze with episolon value:", epsilon
+	print "\nSolving the maze with epsilon value:", epsilon
 	return (worldMaze, epsilon)
 
 
@@ -139,6 +139,7 @@ def evaluateUtility(i, j, world):
 	node = world[i][j]
 	index_obstacle = node.getObstacle()
 
+	# Don't evaluate the utility of moving at a wall or at the exit
 	if index_obstacle == 50 or index_obstacle == 2:
 		return None
 
@@ -194,10 +195,11 @@ def findOptimalPath(maze):
 		elif optMove == "L":
 			j -= 1
 		currentNode = maze[i][j]
+	print currentNode
 
 
 def printMazeMoves(maze):
-	print("Map:")
+	print("Move Policy:")
 	for i in reversed(worldMaze):
 		tmpArr = [str(x.getOptimalMove()) for x in i]
 		print " ".join(tmpArr)

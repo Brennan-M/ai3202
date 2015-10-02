@@ -3,10 +3,15 @@
 ## Running MDP.py
 Execute the following command:
 ```
-python Maze.py <fileName> <epsilon>
+python MDP.py <fileName> <epsilon>
 ```
 
-## 
+##Answers to Questions
+Utimately, no value of epsilon changed the optimal path taken. With that being said
+the Move Policy did change based on epsilon values. This really would only matter
+if our starting position was in a different location. But, the optimal path from
+the starting position (0,0) never changes. The Move Policy changed when epsilon 
+was greater than 20.2.
 
 ## Output Of MDP.py
 ### Note - To view in the correct format, view the raw file (original README source), or run MDP.py
@@ -15,7 +20,7 @@ python Maze.py <fileName> <epsilon>
 -----------------------------------
 
 
-Solving the maze with episolon value: 0.5
+Solving the maze with epsilon value: 0.5
 Finished calculations...
 
 
@@ -37,10 +42,11 @@ Coordinates in (x, y) format.
 (6, 7) - Utility: 18.1856286505 - Direction: R
 (7, 7) - Utility: 26.646706459 - Direction: R
 (8, 7) - Utility: 36.0 - Direction: R
+(9, 7) - Utility: 50 - Direction: *
 
 
 
-Map:
+Move Policy:
 R R R R R R R R R *
 W W R R U U W U W U
 R R R R U U W R R U
