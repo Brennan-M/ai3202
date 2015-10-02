@@ -23,7 +23,7 @@ class Node(object):
 			self.optimalMove = None
 
 			if (value == 2):
-				self.optimalMove = "No Direction" # Let 'W' represent Wall
+				self.optimalMove = "W" # Let 'W' represent Wall
 
 			if (value == 1):
 				self.reward = -1
@@ -89,6 +89,7 @@ def getArgs():
 		worldMaze = constructWorld(sys.argv[1])
 		epsilon = float(sys.argv[2])
 	elif len(sys.argv) == 2:
+		worldMaze = constructWorld(sys.argv[1])
 		print("Epsilon value not provided, using Default.")
 		epsilon = 0.5
 	elif len (sys.argv) == 1:
@@ -96,6 +97,9 @@ def getArgs():
 		worldMaze = constructWorld("World1.txt")
 		print("Epsilon value not provided, using Default.")
 		epsilon = 0.5
+
+	if (epsilon < 0):
+		print("Epsilon cannot be less than 0, using Default.")
 
 	print "\nSolving the maze with episolon value:", epsilon
 	return (worldMaze, epsilon)
@@ -173,7 +177,7 @@ def evaluateUtility(i, j, world):
 
 
 def findOptimalPath(maze):
-	print("Optimal Path:")
+	print("\nOptimal Path:")
 	print("Coordinates in (x, y) format.")
 	i = 0
 	j = 0
@@ -191,10 +195,21 @@ def findOptimalPath(maze):
 			j -= 1
 		currentNode = maze[i][j]
 
+
+def printMazeMoves(maze):
+	print("Map:")
+	for i in reversed(worldMaze):
+		tmpArr = [str(x.getOptimalMove()) for x in i]
+		print " ".join(tmpArr)
+
+
+
 if __name__ == "__main__":
 	(worldMaze, epsilon) = getArgs()
 	setOverallOptimalMoves(worldMaze, epsilon)
 	findOptimalPath(worldMaze)
+	print("\n\n")
+	printMazeMoves(worldMaze)
 	print ("\n-----------------------------------\n")
 
 
