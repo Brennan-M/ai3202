@@ -75,6 +75,7 @@ class Bayesian_Network(object):
 			RV.marginal_probability = RV_marg_prob
 			RV.marginal_prob_calculated = True
 
+
 	def solve_conditional_probability(self, RV1, RV2, r1status, r2status):
 		# Solve P(RV1 | RV2)
 		reasoning = self.decide_directon_of_reasoning(RV1, RV2)
@@ -88,27 +89,39 @@ class Bayesian_Network(object):
 
 
 			else: # We need to sum something out
-				print "yeah"
 
-				# Sum out RV1's parents
-				rvp_prob_to_sum_out = None
-				rvp_marg_conditioning_on = RV2.name
+				if not (RV1.parents.has_key(RV2.name)): # we are two nodes below the parent
+					#P(x = pos | smoker) = P(X|C) * P(C|S) + P(X|~C)*P(~C|S)
+					rvp = None
+					for parent in RV1.parents.values():
+						rvp = parent
+					x = self.solve_conditional_probability(RV1, rvp, r1status, "")
+					r1 = self.solve_conditional_probability(rvp, RV2, "", r2status)
+					y = self.solve_conditional_probability(RV1, rvp, r1status, "~")
+					r2 = 1-r1
 
-				for rvp in RV1.parents.values():
-					if (rvp.name != RV2.name):
-						rvp_prob_to_sum_out = (rvp.marginal_probability_name, rvp.marginal_probability)
-				
-				x = ((r2status+RV2.marginal_probability_name+rvp_prob_to_sum_out[0], rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * rvp_prob_to_sum_out[1])
-				y = ((r2status+RV2.marginal_probability_name+"~"+rvp_prob_to_sum_out[0], "~"+rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * (1-rvp_prob_to_sum_out[1]))
+					return (x*r1) + (y*r2)
+
+				else: # We are 1 node below the parent
+					# Sum out RV1's parents
+					rvp_prob_to_sum_out = None
+					rvp_marg_conditioning_on = RV2.name
+
+					for rvp in RV1.parents.values():
+						if (rvp.name != RV2.name):
+							rvp_prob_to_sum_out = (rvp.marginal_probability_name, rvp.marginal_probability)
+					
+					x = ((r2status+RV2.marginal_probability_name+rvp_prob_to_sum_out[0], rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * rvp_prob_to_sum_out[1])
+					y = ((r2status+RV2.marginal_probability_name+"~"+rvp_prob_to_sum_out[0], "~"+rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * (1-rvp_prob_to_sum_out[1]))
 
 
-				r1 = x[1] * RV1.probs.get(x[0][0], RV1.probs.get(x[0][1], False))
-				r2 = y[1] * RV1.probs.get(y[0][0], RV1.probs.get(y[0][1], False))
+					r1 = x[1] * RV1.probs.get(x[0][0], RV1.probs.get(x[0][1], False))
+					r2 = y[1] * RV1.probs.get(y[0][0], RV1.probs.get(y[0][1], False))
 
-				if r1status == "~":
-					return 1 - ((r1 + r2) / RV2.marginal_probability)
-				else:
-					return (r1 + r2) / RV2.marginal_probability
+					if r1status == "~":
+						return 1 - ((r1 + r2) / RV2.marginal_probability)
+					else:
+						return (r1 + r2) / RV2.marginal_probability
 			
 		elif (reasoning == DR):
 			return None
@@ -118,6 +131,7 @@ class Bayesian_Network(object):
 
 		elif (reasoning == SIBLING):
 			return RV1.marginal_probability
+
 
 	def decide_directon_of_reasoning(self, RV1, RV2):
 		if (RV1.name == RV2.name):
@@ -186,7 +200,7 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	print BN.solve_conditional_probability(X, S,"","")
+	print BN.solve_conditional_probability(D, S, "", "")
 
 	return BN
 
