@@ -172,6 +172,11 @@ class Bayesian_Network(object):
 		return SIBLING
 
 
+	def solve_joint_probabilities(self):
+		return None
+
+		
+
 def construct_bayes_net():
 	P = Node("Pollution", "P")
 	P.add_probability("P", 0.9)
