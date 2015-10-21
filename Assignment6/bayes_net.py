@@ -1,6 +1,6 @@
 ##########################################
-#		Bayes Net Disease Predictor		 #
-#			Brennan McConnell			 #
+#	Bayes Net Disease Predictor	 #
+#	     Brennan McConnell		 #
 ##########################################
 
 class Node(object):
