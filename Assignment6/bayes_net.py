@@ -77,9 +77,9 @@ class Bayesian_Network(object):
 	def solve_conditional_probability(self, RV1, RV2, r1status, r2status):
 		# Solve P(RV1 | RV2)
 		reasoning = self.decide_direction_of_reasoning(RV1, RV2)
-		if (reasoning == PR): # freebie pretty much, given in initial data
+		if (reasoning == PR): 
 			
-			if (RV1.probs.has_key(RV2.marginal_probability_name)):
+			if (RV1.probs.has_key(RV2.marginal_probability_name)): # freebie pretty much, given in initial data
 				if r1status == "~":
 					return 1-RV1.probs[r2status + RV2.marginal_probability_name]
 				else:
@@ -191,8 +191,18 @@ class Bayesian_Network(object):
 		return SIBLING
 
 
-	def solve_joint_probabilities(self):
+	def solve_joint_probability(RV_Terms):
 		return None
+
+	def solve_joint_probability_pair(self, RV1, RV2, r1status, r2status):
+		# This returns correctly regardless of dependence between RV1 and RV2
+		if r2status == "~":
+			mp = 1 - RV2.marginal_probability
+		else:
+			mp = RV2.marginal_probability
+
+		return mp * self.solve_conditional_probability(RV1, RV2, r1status, r2status)
+
 
 
 
@@ -226,8 +236,10 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	print BN.solve_conditional_probability(X, D, "", "")
-
+	print BN.solve_joint_probability_pair(C, S, "", "")
+	print BN.solve_joint_probability_pair(S, C, "", "")
+	print BN.solve_conditional_probability(S, C, "", "")
+	print BN.solve_conditional_probability(C, S, "", "")
 
 	return BN
 
