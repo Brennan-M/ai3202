@@ -11,7 +11,15 @@ Utimately, no value of epsilon changed the optimal path taken. With that being s
 the Move Policy did change based on epsilon values. This really would only matter
 if our starting position was in a different location. But, the optimal path from
 the starting position (0,0) never changes. The Move Policy changed when epsilon 
-was greater than 20.2.
+was greater than 20.2. I tried multiple epsilon values until I encoutered this change. 
+My explanation for this change is straightforward, since our epsilon is higher, we will
+stop iterating sooner due to the fact that delta (the biggest change) will now not be large
+enough to signify that we might continue to converge on an answer should we keep iterating.
+Thus we allow for a larger 'error'. As we get smaller with our epsilon and we allow less error,
+(and force our program to keep iterating until almost no changes are being applied to the utilities),
+we converge on the most optimal path. Thus when our epsilon is 20.2 and the Move Policy changes, this
+is simply because we stopped iterating early and had too large of an error allowed and
+we could have narrowed it down more by selecting a better epsilon, such as 0.5 like we do for our example.
 
 ## Output Of MDP.py
 ### Note - To view in the correct format, view the raw file (original README source), or run MDP.py
