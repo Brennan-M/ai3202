@@ -1,3 +1,5 @@
+# YOU THERE!! STOP CHEATING OFF OF THIS! #
+
 ##########################################
 #	Bayes Net Disease Predictor	 #
 #	     Brennan McConnell		 #
