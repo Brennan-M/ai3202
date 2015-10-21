@@ -3,6 +3,11 @@
 #	     Brennan McConnell		 #
 ##########################################
 
+NO_REASONING = 0
+SIBLING = 3
+PR = 1
+DR = 2
+
 class Node(object):
 
 	def __init__(self, name, cpn):
@@ -10,9 +15,9 @@ class Node(object):
 		self.probs = {}
 		self.parents = {}
 		self.children = {}
-		self.conditional_prob_calculated = False
-		self.conditional_probability_name = cpn
-		self.conditional_probability = None
+		self.marginal_prob_calculated = False
+		self.marginal_probability_name = cpn
+		self.marginal_probability = None
 
 	def add_probability(self, key, value):
 		self.probs[key] = value
@@ -34,7 +39,7 @@ class Bayesian_Network(object):
 
 	def calculate_marginal_probabilities(self):
 		for RV in self.nodes.values():
-			if RV.conditional_prob_calculated == False:
+			if RV.marginal_prob_calculated == False:
 				self.solve_marginal_prob(RV)
 
 	def solve_marginal_prob(self, RV):
@@ -43,15 +48,15 @@ class Bayesian_Network(object):
 			if (len(results) != 1):
 				print "ERROR FOUND!"
 			else:
-				RV.conditional_probability = results[0]
-				RV.conditional_prob_calculated = True
+				RV.marginal_probability = results[0]
+				RV.marginal_prob_calculated = True
 		else:
-			RV_cond_prob = 0.0
-			rvp_cond_probs = {}
+			RV_marg_prob = 0.0
+			rvp_marg_probs = {}
 			for rvp in RV.parents.values():
-				if (rvp.conditional_prob_calculated == False):
+				if (rvp.marginal_prob_calculated == False):
 					self.solve_marginal_prob(rvp)
-				rvp_cond_probs[rvp.conditional_probability_name] = rvp.conditional_probability
+				rvp_marg_probs[rvp.marginal_probability_name] = rvp.marginal_probability
 
 			for (key, val) in RV.probs.items():
 				cur = 1.0
@@ -61,21 +66,97 @@ class Bayesian_Network(object):
 						negate = True
 					else:
 						if (negate == False):
-							cur *= rvp_cond_probs[char]
+							cur *= rvp_marg_probs[char]
 						else:
 							negate = False
-							cur *= (1 - rvp_cond_probs[char])
-				RV_cond_prob += val * cur
+							cur *= (1 - rvp_marg_probs[char])
+				RV_marg_prob += val * cur
 
-			RV.conditional_probability = RV_cond_prob
-			RV.conditional_prob_calculated = True
+			RV.marginal_probability = RV_marg_prob
+			RV.marginal_prob_calculated = True
+
+	def solve_conditional_probability(self, RV1, RV2, r1status, r2status):
+		# Solve P(RV1 | RV2)
+		reasoning = self.decide_directon_of_reasoning(RV1, RV2)
+		if (reasoning == PR):
+			
+			if (RV1.probs.has_key(RV2.marginal_probability_name)):
+				if r1status == "~":
+					return 1-RV1.probs[r2status + RV2.marginal_probability_name]
+				else:
+					return RV1.probs[r2status + RV2.marginal_probability_name]
+
+
+			else: # We need to sum something out
+				print "yeah"
+
+				# Sum out RV1's parents
+				rvp_prob_to_sum_out = None
+				rvp_marg_conditioning_on = RV2.name
+
+				for rvp in RV1.parents.values():
+					if (rvp.name != RV2.name):
+						rvp_prob_to_sum_out = (rvp.marginal_probability_name, rvp.marginal_probability)
+				
+				x = ((r2status+RV2.marginal_probability_name+rvp_prob_to_sum_out[0], rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * rvp_prob_to_sum_out[1])
+				y = ((r2status+RV2.marginal_probability_name+"~"+rvp_prob_to_sum_out[0], "~"+rvp_prob_to_sum_out[0]+r2status+RV2.marginal_probability_name), RV2.marginal_probability * (1-rvp_prob_to_sum_out[1]))
+
+
+				r1 = x[1] * RV1.probs.get(x[0][0], RV1.probs.get(x[0][1], False))
+				r2 = y[1] * RV1.probs.get(y[0][0], RV1.probs.get(y[0][1], False))
+
+				if r1status == "~":
+					return 1 - ((r1 + r2) / RV2.marginal_probability)
+				else:
+					return (r1 + r2) / RV2.marginal_probability
+			
+		elif (reasoning == DR):
+			return None
+
+		elif (reasoning == NO_REASONING):
+			return 1
+
+		elif (reasoning == SIBLING):
+			return RV1.marginal_probability
+
+	def decide_directon_of_reasoning(self, RV1, RV2):
+		if (RV1.name == RV2.name):
+			return NO_REASONING
+
+		queue = []
+		# If RV2 is above RV1, this is Predictive Reasoning
+		queue.append(RV1)
+		while (len(queue) > 0):
+			for result in queue:
+				if (result.name == RV2.name):
+					# "Predictive Reasoning"
+					return PR
+				queue.remove(result)
+				for item in result.parents.values():
+					queue.append(item)
+
+
+		queue = []
+		queue.append(RV2)
+		# If RV1 is above RV2, this is Diagnostic Reasoning
+		while (len(queue) > 0):
+			for result in queue:
+				if (result.name == RV1.name):
+					# "Diagnostic Reasoning"
+					return DR
+				queue.remove(result)
+				for item in result.parents.values():
+					queue.append(item)
+
+
+		return SIBLING
 
 
 def construct_bayes_net():
 	P = Node("Pollution", "P")
-	P.add_probability("L", 0.9)
+	P.add_probability("P", 0.9)
 	S = Node("Smoker", "S")
-	S.add_probability("T", 0.3)
+	S.add_probability("S", 0.3)
 	C = Node("Cancer", "C")
 	C.add_probability("~PS", 0.05)
 	C.add_probability("~P~S", 0.02)
@@ -103,19 +184,17 @@ def construct_bayes_net():
 	BN.add_node(C)
 	BN.add_node(X)
 	BN.add_node(D)
-
 	BN.calculate_marginal_probabilities()
 
-	return BN
+	print BN.solve_conditional_probability(X, S,"","")
 
-def query_bayes_net(query):
-	parse_query(query)
+	return BN
 
 
 if __name__ == "__main__":
 	bayes_net = construct_bayes_net()
-	for node in bayes_net.nodes.values():
-		print (node.conditional_probability_name, " : ", node.conditional_probability)
+	# for node in bayes_net.nodes.values():
+	#	print node.marginal_probability_name, ":", round(node.marginal_probability, 4)
 
 
 
