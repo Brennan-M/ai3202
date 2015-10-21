@@ -136,7 +136,26 @@ class Bayesian_Network(object):
 			return 1
 
 		elif (reasoning == SIBLING):
-			return RV1.marginal_probability
+			shared_parent = False
+			RV3 = None
+			for rvp1 in RV1.parents.values():
+				for rvp2 in RV2.parents.values():
+					if rvp1 == rvp2:
+						RV3 = rvp1
+						shared_parent = True
+						break
+			if (shared_parent): # There is intercausal probability affects
+				# These two effects depend on each other through there conditional dependence on the parent
+			
+				x = self.solve_conditional_probability(RV1, RV3, r1status, "")
+				r1 = self.solve_conditional_probability(RV3, RV2, "", r2status)
+				y = self.solve_conditional_probability(RV1, RV3, r1status, "~")
+				r2 = self.solve_conditional_probability(RV3, RV2, "~", r2status)
+
+				return (x*r1) + (y*r2)
+
+			else:
+				return RV1.marginal_probability
 
 
 	def decide_direction_of_reasoning(self, RV1, RV2):
@@ -175,7 +194,7 @@ class Bayesian_Network(object):
 	def solve_joint_probabilities(self):
 		return None
 
-		
+
 
 def construct_bayes_net():
 	P = Node("Pollution", "P")
