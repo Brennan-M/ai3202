@@ -14,7 +14,6 @@ class Node(object):
 		self.name = name
 		self.probs = {}
 		self.parents = {}
-		self.children = {}
 		self.marginal_prob_calculated = False
 		self.marginal_probability_name = cpn
 		self.marginal_probability = None
@@ -24,9 +23,6 @@ class Node(object):
 
 	def add_parent(self, node):
 		self.parents[node.name] = node
-
-	def add_child(self, node):
-		self.children[node.name] = node
 
 
 class Bayesian_Network(object):
@@ -78,8 +74,8 @@ class Bayesian_Network(object):
 
 	def solve_conditional_probability(self, RV1, RV2, r1status, r2status):
 		# Solve P(RV1 | RV2)
-		reasoning = self.decide_directon_of_reasoning(RV1, RV2)
-		if (reasoning == PR):
+		reasoning = self.decide_direction_of_reasoning(RV1, RV2)
+		if (reasoning == PR): # freebie pretty much, given in initial data
 			
 			if (RV1.probs.has_key(RV2.marginal_probability_name)):
 				if r1status == "~":
@@ -91,7 +87,6 @@ class Bayesian_Network(object):
 			else: # We need to sum something out
 
 				if not (RV1.parents.has_key(RV2.name)): # we are two nodes below the parent
-					#P(x = pos | smoker) = P(X|C) * P(C|S) + P(X|~C)*P(~C|S)
 					rvp = None
 					for parent in RV1.parents.values():
 						rvp = parent
@@ -124,7 +119,16 @@ class Bayesian_Network(object):
 						return (r1 + r2) / RV2.marginal_probability
 			
 		elif (reasoning == DR):
-			return None
+			# We can use Predictive reasoning to work backwards
+			# i.e. P(A|B) = P(B|A)P(A)/P(B)
+			x = self.solve_conditional_probability(RV2, RV1, r2status, "")
+			x *= RV1.marginal_probability
+			x /= RV2.marginal_probability
+
+			if (r1status == "~"):
+				return (1-x)
+			else:
+				return x
 
 		elif (reasoning == NO_REASONING):
 			return 1
@@ -133,7 +137,7 @@ class Bayesian_Network(object):
 			return RV1.marginal_probability
 
 
-	def decide_directon_of_reasoning(self, RV1, RV2):
+	def decide_direction_of_reasoning(self, RV1, RV2):
 		if (RV1.name == RV2.name):
 			return NO_REASONING
 
@@ -183,10 +187,6 @@ def construct_bayes_net():
 	D.add_probability("C", 0.65)
 	D.add_probability("~C", 0.3)
 
-	P.add_child(C)
-	S.add_child(C)
-	C.add_child(X)
-	C.add_child(D)
 	C.add_parent(P)
 	C.add_parent(S)
 	X.add_parent(C)
@@ -200,15 +200,16 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	print BN.solve_conditional_probability(D, S, "", "")
+	print BN.solve_conditional_probability(X, D, "", "")
+
 
 	return BN
 
 
 if __name__ == "__main__":
 	bayes_net = construct_bayes_net()
-	# for node in bayes_net.nodes.values():
-	#	print node.marginal_probability_name, ":", round(node.marginal_probability, 4)
+#	for node in bayes_net.nodes.values():
+#		print node.marginal_probability_name, ":", round(node.marginal_probability, 4)
 
 
 
