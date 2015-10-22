@@ -284,6 +284,36 @@ class Bayesian_Network(object):
 
 
 		elif reasoning[0] == COMBINED:
+			# This is a special case in which 2 lowest nodes are present, representing a conditionally dependent combined reasoning
+			# P (D | X, P) for example
+			if isinstance(reasoning[1], tuple):
+
+				RV_root_id1 = reasoning[1][0] - 1 #RV1
+				RVparents = RV1.parents.values()
+				rvp = RVparents[0] # also the parent of RV_root2
+
+				RV_root_id2 = reasoning[1][1] - 1
+				Root_RV = RV_arr[RV_root_id2]
+
+				other_evidence_id = None
+				if (RV_root_id2 == 1):
+					other_evidence_id = 2
+				elif (RV_root_id2 == 2):
+					other_evidence_id = 1
+
+				rv1_given_rvp = self.solve_conditional_probability(RV1, rvp, r1s, "")
+				root_rv_given_rvp = self.solve_conditional_probability(Root_RV, rvp, RV_status_arr[RV_root_id2], "")
+				rv1_given_not_rvp = self.solve_conditional_probability(RV1, rvp, r1s, "~")
+				root_rv_given_not_rvp = self.solve_conditional_probability(Root_RV, rvp, RV_status_arr[RV_root_id2], "~")
+				rvp_given_other_evidence = self.solve_conditional_probability(rvp, RV_arr[other_evidence_id], "", RV_status_arr[other_evidence_id])
+				not_rvp_given_other_evidence = 1 - rvp_given_other_evidence
+				root_rv_given_other_evidence = self.solve_conditional_probability(Root_RV, RV_arr[other_evidence_id], RV_status_arr[RV_root_id2], RV_status_arr[other_evidence_id])
+				
+				probability = (rv1_given_rvp * root_rv_given_rvp * rvp_given_other_evidence) + (rv1_given_not_rvp * root_rv_given_not_rvp * not_rvp_given_other_evidence)
+				probability /= root_rv_given_other_evidence
+				return probability
+
+			# The default case for handling combined reasoning,
 			RV_root_id = reasoning[1] - 1
 			other_evidence_id = None
 			if (RV_root_id == 2):
@@ -342,8 +372,11 @@ class Bayesian_Network(object):
 		# Check for Combined relationship
 		direction = self.decide_direction_of_reasoning(RV2, RV3)
 		if (direction != SIBLING):
-			print "COM"
-			if len(RV2.children.items()) == 0:
+			if (len(RV1.children.items()) == 0 and len(RV3.children.items()) == 0):
+				return (COMBINED, (1, 3))
+			elif (len(RV1.children.items()) == 0 and len(RV2.children.items()) == 0):
+				return (COMBINED, (1, 2))
+			elif len(RV2.children.items()) == 0:
 				return (COMBINED, 2) #RV will represent the lowest node in combined
 			else:
 				return (COMBINED, 3)
@@ -387,8 +420,8 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	print BN.solve_conditional_on_joint_probability(P, D, S, "", "", "")
-	#print BN.solve_conditional_on_joint_probability(D, P, S, "", "~", "")
+	#print BN.solve_conditional_on_joint_probability(S, D, X, "", "", "")
+	print BN.solve_conditional_on_joint_probability(X, D, S, "", "", "")
 
 	return BN
 
