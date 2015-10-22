@@ -200,6 +200,8 @@ class Bayesian_Network(object):
 				return (x*r1) + (y*r2)
 
 			else:
+				if (r1status == "~"):
+					return 1 - RV1.marginal_probability
 				return RV1.marginal_probability
 
 
@@ -365,11 +367,7 @@ class Bayesian_Network(object):
 			
 			# P (RV1 | Not-LN)
 			probability = self.solve_conditional_probability(RV1, RV_arr[other_evidence_id], r1s, RV_status_arr[other_evidence_id])
-
-
-			if (r1s == "~"):
-				probability = 1 - probability
-
+			
 			probability *= root_given_rvs
 			probability /= root_given_other_evidence
 
@@ -446,7 +444,8 @@ class Bayesian_Network(object):
 		a = a.replace("/", "|")
 
 		if flag == "-m":
-			if len(a) > 1:
+			p = a.find("~")
+			if len(a) > 1 and p == -1:
 				print ("You cannot perform a -m on two variables.")
 				print "------------------------------------"
 				print ""
