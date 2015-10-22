@@ -410,7 +410,10 @@ class Bayesian_Network(object):
 		#Fix this for all cases and handle chaining
 		r1_given_r2r3 = self.solve_conditional_on_joint_probability(RV1, RV2, RV3, r1s, r2s, r3s)
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
-		return RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
+		result = RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
+		if (r3s == "~"):
+			return 1 - result
+		return result
 
 	def lookup_node(self, a):
 		for x in self.nodes.values():
@@ -457,93 +460,121 @@ class Bayesian_Network(object):
 
 		elif flag == "-g":
 
-			#Handle upper case distributions yes?
-
-			p = a.find("|")
-			if (p == -1):
-				print ("This is not a conditional probability.")
-				print "------------------------------------"
-				print ""
-				sys.exit(2)
-
-			rv1 = a[:p]
-			rv1status = ""
-			if "~" in rv1:
-				rv1 = rv1[1]
-				rv1status = "~"
-
-			condition_on_rv_arr = []
-			condition_on_rv_status_arr = []
-
-			negate = False
-			for char in a[p+1:]:
-				if char == "~":
-					negate = True
-				else:
-					condition_on_rv_arr.append(char)
-					if negate == True:
-						negate = False
-						condition_on_rv_status_arr.append("~")
-					else:
-						condition_on_rv_status_arr.append("")
+			variations = {}
+			self.recurse_on_combinations(a, variations)
+			for var_arg in variations.keys():
+				self.conditional_helper(flag, var_arg)
 			
-			if len(condition_on_rv_arr) == 1:
-				RV1 = self.lookup_node(rv1)
-				RV2 = self.lookup_node(condition_on_rv_arr[0])
-				print "Probability of", a, "=", round(self.solve_conditional_probability(RV1, RV2, rv1status, condition_on_rv_status_arr[0]), 4)
-			
-			elif len(condition_on_rv_arr) == 2:
-				RV1 = self.lookup_node(rv1)
-				RV2 = self.lookup_node(condition_on_rv_arr[0])
-				RV3 = self.lookup_node(condition_on_rv_arr[1])
-				print "Probability of", a, "=", round(self.solve_conditional_on_joint_probability(RV1, RV2, RV3, rv1status, condition_on_rv_status_arr[0], condition_on_rv_status_arr[1]), 4)
 
 		elif flag == "-j":
-			
-			p = a.find("|")
 
-			if p > -1:
-				print ("This is not a joint probability.")
-				print "------------------------------------"
-				print ""
-				sys.exit(2)
+			variations = {}
+			self.recurse_on_combinations(a, variations)
+			for var_arg in variations.keys():
+				self.joint_helper(flag, var_arg)
 
-			#Handle upper case distributions yes?
-			rv_arr = []
-			rv_status_arr = []
-
-			negate = False
-			for char in a:
-				if char == "~":
-					negate = True
-				else:
-					rv_arr.append(char)
-					if negate == True:
-						negate = False
-						rv_status_arr.append("~")
-					else:
-						rv_status_arr.append("")
-
-			num_rvs = len(rv_arr)
-
-			if num_rvs < 2 or num_rvs > 3:
-				print ("Not a valid joint probability. Number of variables caused error.")
-				print "------------------------------------"
-				print ""
-				sys.exit(2)
-			elif num_rvs == 2:
-				RV1 = self.lookup_node(rv_arr[0])
-				RV2 = self.lookup_node(rv_arr[1])
-				print "Probability of", a, "=", round(self.solve_joint_probability_pair(RV1, RV2, rv_status_arr[0], rv_status_arr[1]), 4)
-
-			elif num_rvs == 3:
-				RV1 = self.lookup_node(rv_arr[0])
-				RV2 = self.lookup_node(rv_arr[1])
-				RV3 = self.lookup_node(rv_arr[2])
-				print "Probability of", a, "=", round(self.solve_joint_probability_three(RV1, RV2, RV3, rv_status_arr[0], rv_status_arr[1], rv_status_arr[2]), 4)
 
 		else:
 			assert False, "unhandled option"
+
+	def recurse_on_combinations(self, a, memo_table):
+		base_case = True
+		for c in a:
+			if c.isupper():
+				b = a.replace(c, c.lower())
+				c = a.replace(c, "~"+c.lower())
+				if not memo_table.has_key(b):
+					self.recurse_on_combinations(b, memo_table)
+				if not memo_table.has_key(c):
+					self.recurse_on_combinations(c, memo_table)
+				base_case = False
+
+		if (base_case):
+			memo_table[a] = True
+
+	def conditional_helper(self, flag, a):
+		p = a.find("|")
+		if (p == -1):
+			print ("This is not a conditional probability.")
+			print "------------------------------------"
+			print ""
+			sys.exit(2)
+
+		rv1 = a[:p]
+		rv1status = ""
+		if "~" in rv1:
+			rv1 = rv1[1]
+			rv1status = "~"
+
+		condition_on_rv_arr = []
+		condition_on_rv_status_arr = []
+
+		negate = False
+		for char in a[p+1:]:
+			if char == "~":
+				negate = True
+			else:
+				condition_on_rv_arr.append(char)
+				if negate == True:
+					negate = False
+					condition_on_rv_status_arr.append("~")
+				else:
+					condition_on_rv_status_arr.append("")
+		
+		if len(condition_on_rv_arr) == 1:
+			RV1 = self.lookup_node(rv1)
+			RV2 = self.lookup_node(condition_on_rv_arr[0])
+			print "Probability of", a, "=", round(self.solve_conditional_probability(RV1, RV2, rv1status, condition_on_rv_status_arr[0]), 4)
+		
+		elif len(condition_on_rv_arr) == 2:
+			RV1 = self.lookup_node(rv1)
+			RV2 = self.lookup_node(condition_on_rv_arr[0])
+			RV3 = self.lookup_node(condition_on_rv_arr[1])
+			print "Probability of", a, "=", round(self.solve_conditional_on_joint_probability(RV1, RV2, RV3, rv1status, condition_on_rv_status_arr[0], condition_on_rv_status_arr[1]), 4)
+
+
+	def joint_helper(self, flag, a):
+		p = a.find("|")
+
+		if p > -1:
+			print ("This is not a joint probability.")
+			print "------------------------------------"
+			print ""
+			sys.exit(2)
+
+		#Handle upper case distributions yes?
+		rv_arr = []
+		rv_status_arr = []
+
+		negate = False
+		for char in a:
+			if char == "~":
+				negate = True
+			else:
+				rv_arr.append(char)
+				if negate == True:
+					negate = False
+					rv_status_arr.append("~")
+				else:
+					rv_status_arr.append("")
+
+		num_rvs = len(rv_arr)
+
+		if num_rvs < 2 or num_rvs > 3:
+			print ("Not a valid joint probability. Number of variables caused error.")
+			print "------------------------------------"
+			print ""
+			sys.exit(2)
+		elif num_rvs == 2:
+			RV1 = self.lookup_node(rv_arr[0])
+			RV2 = self.lookup_node(rv_arr[1])
+			print "Probability of", a, "=", round(self.solve_joint_probability_pair(RV1, RV2, rv_status_arr[0], rv_status_arr[1]), 4)
+
+		elif num_rvs == 3:
+			RV1 = self.lookup_node(rv_arr[0])
+			RV2 = self.lookup_node(rv_arr[1])
+			RV3 = self.lookup_node(rv_arr[2])
+			print "Probability of", a, "=", round(self.solve_joint_probability_three(RV1, RV2, RV3, rv_status_arr[0], rv_status_arr[1], rv_status_arr[2]), 4)
 
 
 
