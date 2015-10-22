@@ -20,6 +20,7 @@ INHERENTLY_GIVEN = 7
 
 class Node(object):
 
+
 	def __init__(self, name, cpn):
 		self.name = name
 		self.probs = {}
@@ -29,14 +30,18 @@ class Node(object):
 		self.marginal_probability_name = cpn
 		self.marginal_probability = None
 
+
 	def add_probability(self, key, value):
 		self.probs[key] = value
+
 
 	def add_parent(self, node):
 		self.parents[node.name] = node
 
+
 	def add_child(self, node):
 		self.children[node.name] = node
+
 
 	def change_probability(self, key, value):
 		self.probs[key] = value
@@ -44,11 +49,14 @@ class Node(object):
 
 class Bayesian_Network(object):
 
+
 	def __init__(self):
 		self.nodes = {}
 
+
 	def add_node(self, node):
 		self.nodes[node.name] = node
+
 
 	def update_probability(self, arg, newValue):
 		node = None
@@ -66,10 +74,12 @@ class Bayesian_Network(object):
 		
 		self.calculate_marginal_probabilities()
 
+
 	def calculate_marginal_probabilities(self):
 		for RV in self.nodes.values():
 			if RV.marginal_prob_calculated == False:
 				self.solve_marginal_prob(RV)
+
 
 	def solve_marginal_prob(self, RV):
 		if (len(RV.parents) == 0):
@@ -109,7 +119,6 @@ class Bayesian_Network(object):
 		# Solve P(RV1 | RV2)
 		reasoning = self.decide_direction_of_reasoning(RV1, RV2)
 		if (reasoning == PR): 
-			
 			if (RV1.probs.has_key(RV2.marginal_probability_name)): # freebie pretty much, given in initial data
 				if r1status == "~":
 					return 1-RV1.probs[r2status + RV2.marginal_probability_name]
@@ -156,7 +165,12 @@ class Bayesian_Network(object):
 			# i.e. P(A|B) = P(B|A)P(A)/P(B)
 			x = self.solve_conditional_probability(RV2, RV1, r2status, "")
 			x *= RV1.marginal_probability
-			x /= RV2.marginal_probability
+			
+			y = RV2.marginal_probability
+
+			if (r2status == "~"):
+				y = 1-y
+			x /= y
 
 			if (r1status == "~"):
 				return (1-x)
@@ -405,6 +419,7 @@ class Bayesian_Network(object):
 		# Neither, this case arises if P (x | p,s)
 		return (NEITHER, None)
 
+
 	def solve_joint_probability_three(self, RV1, RV2, RV3, r1s, r2s, r3s):
 
 		#Fix this for all cases and handle chaining
@@ -414,6 +429,7 @@ class Bayesian_Network(object):
 		if (r3s == "~"):
 			return 1 - result
 		return result
+
 
 	def lookup_node(self, a):
 		for x in self.nodes.values():
@@ -477,6 +493,7 @@ class Bayesian_Network(object):
 		else:
 			assert False, "unhandled option"
 
+
 	def recurse_on_combinations(self, a, memo_table):
 		base_case = True
 		for c in a:
@@ -491,6 +508,7 @@ class Bayesian_Network(object):
 
 		if (base_case):
 			memo_table[a] = True
+
 
 	def conditional_helper(self, flag, a):
 		p = a.find("|")
@@ -613,6 +631,7 @@ def construct_bayes_net():
 	BN.calculate_marginal_probabilities()
 
 	return BN
+
 
 FLAGS = ':g:j:m:p:'
 
