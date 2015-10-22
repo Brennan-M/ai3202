@@ -37,6 +37,9 @@ class Node(object):
 	def add_child(self, node):
 		self.children[node.name] = node
 
+	def change_probability(self, key, value):
+		self.probs[key] = value
+
 
 class Bayesian_Network(object):
 
@@ -396,14 +399,33 @@ class Bayesian_Network(object):
 			for x in self.nodes.values():
 				if (x.marginal_probability_name == a):
 					print x.marginal_probability
+		elif flag == "-g":
+			p = a.find("/")
+			rv1 = a[:p]
+			num = len(a[p+1:])
+			if num == 2:
+				rv2 = a[p+1:]
+				print rv1, rv2
+			else:
+				rv2, rv3 = a[p+1:][0:1], a[p+1:][1:2]
+				
+				print rv1, rv2
+			
 
 	def update_probability(self, arg, newValue):
+		node = None
+
 		if (arg == "P"):
 			node = self.nodes["Pollution"]
-			node.probs[arg] = newValue
+
 		elif (arg == "S"):
 			node = self.nodes["Smoker"]
-			node.probs[arg] = newValue
+		
+		node.change_probability(arg, newValue)
+
+		for n in self.nodes.values():
+			n.marginal_prob_calculated = False
+		
 		self.calculate_marginal_probabilities()
 
 
@@ -464,24 +486,11 @@ if __name__ == "__main__":
 	for o, a in opts:
 		if o in ("-p"):
 			#setting the prior here works if the Bayes net is already built
-			for n in bayes_net.nodes.values():
-				print n.marginal_probability_name, n.marginal_probability
 			bayes_net.update_probability(a[0], float(a[1:]))
-			for n in bayes_net.nodes.values():
-				print n.marginal_probability_name, n.marginal_probability
 		elif o in ("-m"):
 			bayes_net.bayes_network_query(o, a)
 		elif o in ("-g"):
-			print "flag", o
-			print "args", a
-			print type(a)
-			'''you may want to parse a here and pass the left of |
-			and right of | as arguments to calcConditional
-			'''
-			p = a.find("|")
-			print a[:p]
-			print a[p+1:]
-			#calcConditional(a[:p], a[p+1:])
+			bayes_net.bayes_network_query(o, a)
 		elif o in ("-j"):
 			print "flag", o
 			print "args", a
