@@ -1,4 +1,5 @@
 # YOU THERE!! STOP CHEATING OFF OF THIS! #
+# JK, this is unreadable code, good luck #
 
 ##########################################
 #	Bayes Net Disease Predictor	 #
@@ -406,6 +407,7 @@ class Bayesian_Network(object):
 
 	def solve_joint_probability_three(self, RV1, RV2, RV3, r1s, r2s, r3s):
 
+		#Fix this for all cases and handle chaining
 		r1_given_r2r3 = self.solve_conditional_on_joint_probability(RV1, RV2, RV3, r1s, r2s, r3s)
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
 		return RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
@@ -425,6 +427,11 @@ class Bayesian_Network(object):
 		a = a.replace("/", "|")
 
 		if flag == "-m":
+			if len(a) > 1:
+				print ("You cannot perform a -m on two variables.")
+				print "------------------------------------"
+				print ""
+				sys.exit(2)
 
 			result = None
 			upper = a.isupper()
@@ -451,8 +458,14 @@ class Bayesian_Network(object):
 		elif flag == "-g":
 
 			#Handle upper case distributions yes?
-			
+
 			p = a.find("|")
+			if (p == -1):
+				print ("This is not a conditional probability.")
+				print "------------------------------------"
+				print ""
+				sys.exit(2)
+
 			rv1 = a[:p]
 			rv1status = ""
 			if "~" in rv1:
@@ -477,13 +490,60 @@ class Bayesian_Network(object):
 			if len(condition_on_rv_arr) == 1:
 				RV1 = self.lookup_node(rv1)
 				RV2 = self.lookup_node(condition_on_rv_arr[0])
-				print "Probability of", a, "=", self.solve_conditional_probability(RV1, RV2, rv1status, condition_on_rv_status_arr[0])
+				print "Probability of", a, "=", round(self.solve_conditional_probability(RV1, RV2, rv1status, condition_on_rv_status_arr[0]), 4)
 			
 			elif len(condition_on_rv_arr) == 2:
 				RV1 = self.lookup_node(rv1)
 				RV2 = self.lookup_node(condition_on_rv_arr[0])
 				RV3 = self.lookup_node(condition_on_rv_arr[1])
-				print "Probability of", a, "=", self.solve_conditional_on_joint_probability(RV1, RV2, RV3, rv1status, condition_on_rv_status_arr[0], condition_on_rv_status_arr[1])
+				print "Probability of", a, "=", round(self.solve_conditional_on_joint_probability(RV1, RV2, RV3, rv1status, condition_on_rv_status_arr[0], condition_on_rv_status_arr[1]), 4)
+
+		elif flag == "-j":
+			
+			p = a.find("|")
+
+			if p > -1:
+				print ("This is not a joint probability.")
+				print "------------------------------------"
+				print ""
+				sys.exit(2)
+
+			#Handle upper case distributions yes?
+			rv_arr = []
+			rv_status_arr = []
+
+			negate = False
+			for char in a:
+				if char == "~":
+					negate = True
+				else:
+					rv_arr.append(char)
+					if negate == True:
+						negate = False
+						rv_status_arr.append("~")
+					else:
+						rv_status_arr.append("")
+
+			num_rvs = len(rv_arr)
+
+			if num_rvs < 2 or num_rvs > 3:
+				print ("Not a valid joint probability. Number of variables caused error.")
+				print "------------------------------------"
+				print ""
+				sys.exit(2)
+			elif num_rvs == 2:
+				RV1 = self.lookup_node(rv_arr[0])
+				RV2 = self.lookup_node(rv_arr[1])
+				print "Probability of", a, "=", round(self.solve_joint_probability_pair(RV1, RV2, rv_status_arr[0], rv_status_arr[1]), 4)
+
+			elif num_rvs == 3:
+				RV1 = self.lookup_node(rv_arr[0])
+				RV2 = self.lookup_node(rv_arr[1])
+				RV3 = self.lookup_node(rv_arr[2])
+				print "Probability of", a, "=", round(self.solve_joint_probability_three(RV1, RV2, RV3, rv_status_arr[0], rv_status_arr[1], rv_status_arr[2]), 4)
+
+		else:
+			assert False, "unhandled option"
 
 
 
@@ -521,10 +581,6 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	#print BN.solve_conditional_on_joint_probability(S, D, X, "", "", "")
-	#print BN.solve_conditional_on_joint_probability(X, D, S, "", "", "")
-	#print BN.solve_joint_probability_three(D, X, C, "", "", "")
-	#print BN.solve_conditional_on_joint_probability(P, S, C, "~", "", "")
 	return BN
 
 FLAGS = ':g:j:m:p:'
@@ -540,16 +596,6 @@ if __name__ == "__main__":
 	print ""
 	print "------------------------------------"
 	for o, a in opts:
-		if o in ("-p"):
-			bayes_net.bayes_network_query(o, a)
-		elif o in ("-m"):
-			bayes_net.bayes_network_query(o, a)
-		elif o in ("-g"):
-			bayes_net.bayes_network_query(o, a)
-		elif o in ("-j"):
-			print "flag", o
-			print "args", a
-		else:
-			assert False, "unhandled option"
+		bayes_net.bayes_network_query(o, a)
 	print "------------------------------------"
 	print ""
