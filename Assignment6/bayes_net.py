@@ -49,6 +49,22 @@ class Bayesian_Network(object):
 	def add_node(self, node):
 		self.nodes[node.name] = node
 
+	def update_probability(self, arg, newValue):
+		node = None
+
+		if (arg == "P"):
+			node = self.nodes["Pollution"]
+
+		elif (arg == "S"):
+			node = self.nodes["Smoker"]
+		
+		node.change_probability(arg, newValue)
+
+		for n in self.nodes.values():
+			n.marginal_prob_calculated = False
+		
+		self.calculate_marginal_probabilities()
+
 	def calculate_marginal_probabilities(self):
 		for RV in self.nodes.values():
 			if RV.marginal_prob_calculated == False:
@@ -396,42 +412,44 @@ class Bayesian_Network(object):
 
 	def bayes_network_query(self, flag, a):
 		if flag == "-m":
-			for x in self.nodes.values():
-				if (x.marginal_probability_name == a):
-					print x.marginal_probability
+
+			result = None
+			upper = a.isupper()
+			
+			if (upper):
+				for x in self.nodes.values():
+					if (x.marginal_probability_name == a):
+						result = x.marginal_probability
+
+				print "Marginal Probability Distribution of", a
+				print a.lower()+":", result, "~"+a.lower()+":", 1-result
+			else:			
+				if "~" in a:
+					for x in self.nodes.values():
+						if (x.marginal_probability_name == a[1].upper()):
+							result = x.marginal_probability
+					result = 1-result
+				else:
+					for x in self.nodes.values():
+						if (x.marginal_probability_name == a.upper()):
+							result = x.marginal_probability
+				print "Marginal Probability of", a+":", result	
+
+		elif flag == "-p":
+			self.update_probability(a[0], float(a[1:]))
+			print "New probability of", a[0].lower(), "=", float(a[1:])
+
 		elif flag == "-g":
 			p = a.find("/")
 			rv1 = a[:p]
-			num = len(a[p+1:])
-			if num == 2:
-				rv2 = a[p+1:]
-				print rv1, rv2
-			else:
-				rv2, rv3 = a[p+1:][0:1], a[p+1:][1:2]
-				
-				print rv1, rv2
-			
-
-	def update_probability(self, arg, newValue):
-		node = None
-
-		if (arg == "P"):
-			node = self.nodes["Pollution"]
-
-		elif (arg == "S"):
-			node = self.nodes["Smoker"]
-		
-		node.change_probability(arg, newValue)
-
-		for n in self.nodes.values():
-			n.marginal_prob_calculated = False
-		
-		self.calculate_marginal_probabilities()
-
-
-
-
-FLAGS = ':g:j:m:p:'
+			condition_on_rv_arr = []
+			condition_on_rv_status_arr = []
+			negate = False
+			for char in a[p+1:]:
+				if char == "~":
+					negate = True
+				else:
+					condition_on_rv_arr.append(char)
 
 def construct_bayes_net():
 	P = Node("Pollution", "P")
@@ -473,6 +491,7 @@ def construct_bayes_net():
 	#print BN.solve_conditional_on_joint_probability(P, S, C, "~", "", "")
 	return BN
 
+FLAGS = ':g:j:m:p:'
 
 if __name__ == "__main__":
 	try:
@@ -482,11 +501,11 @@ if __name__ == "__main__":
 		sys.exit(2)
 
 	bayes_net = construct_bayes_net()
-
+	print ""
+	print "------------------------------------"
 	for o, a in opts:
 		if o in ("-p"):
-			#setting the prior here works if the Bayes net is already built
-			bayes_net.update_probability(a[0], float(a[1:]))
+			bayes_net.bayes_network_query(o, a)
 		elif o in ("-m"):
 			bayes_net.bayes_network_query(o, a)
 		elif o in ("-g"):
@@ -496,4 +515,5 @@ if __name__ == "__main__":
 			print "args", a
 		else:
 			assert False, "unhandled option"
-	
+	print "------------------------------------"
+	print ""
