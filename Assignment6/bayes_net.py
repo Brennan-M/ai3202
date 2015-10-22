@@ -216,7 +216,11 @@ class Bayesian_Network(object):
 
 		# Can we just solve it given initial data (i.e. P(c|s,p) )
 		if (RV1.probs.has_key(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name) or RV1.probs.has_key(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name)): # freebie pretty much, given in initial data
-			return RV1.probs.get(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name, RV1.probs.get(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name, False))
+			x = RV1.probs.get(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name, RV1.probs.get(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name, False))
+			if (r1s == "~"):
+				return 1 - x
+			return x
+			
 		
 
 		#find which variable the other two depend on
@@ -280,15 +284,48 @@ class Bayesian_Network(object):
 
 
 		elif reasoning[0] == COMBINED:
-			return None
+			RV_root_id = reasoning[1] - 1
+			other_evidence_id = None
+			if (RV_root_id == 2):
+				other_evidence_id = 1
+			elif (RV_root_id == 1):
+				other_evidence_id = 2
+
+			# Works by bayes theorem that we can calculate it out based on lowest node
+			# P (Lowest Node | RV1, Not-LN)
+			root_given_rvs = self.solve_conditional_on_joint_probability(RV_arr[RV_root_id], RV_arr[(RV_root_id+1)%3], RV_arr[(RV_root_id+2)%3], RV_status_arr[RV_root_id], RV_status_arr[(RV_root_id+1)%3], RV_status_arr[(RV_root_id+2)%3])
+			
+			# P (Lowest Node | Not-LN)
+			root_given_other_evidence = self.solve_conditional_probability(RV_arr[RV_root_id], RV_arr[other_evidence_id], RV_status_arr[RV_root_id], RV_status_arr[other_evidence_id])
+			
+			# P (RV1 | Not-LN)
+			probability = self.solve_conditional_probability(RV1, RV_arr[other_evidence_id], r1s, RV_status_arr[other_evidence_id])
+
+
+			if (r1s == "~"):
+				probability = 1 - probability
+
+			probability *= root_given_rvs
+			probability /= root_given_other_evidence
+
+			return probability
+
+
+		elif reasoning[0] == NEITHER:
+			RVparents = RV1.parents.values()
+			rvp = RVparents[0]
+			
+			rv1_given_rvp = self.solve_conditional_probability(RV1, rvp, r1s, "")
+			rv1_given_not_rvp = self.solve_conditional_probability(RV1, rvp, r1s, "~")
+			rvp_given_rv2_rv3 = self.solve_conditional_on_joint_probability(rvp, RV2, RV3, "", r2s, r3s)
+			not_rvp_given_rv2_rv3 = 1 - rvp_given_rv2_rv3
+
+			probability = (rv1_given_rvp*rvp_given_rv2_rv3) + (rv1_given_not_rvp*not_rvp_given_rv2_rv3)
+			probability /= (rvp_given_rv2_rv3+not_rvp_given_rv2_rv3)
+			return probability
  
+
 	def determine_reasoning_with_mult_evidence(self, RV1, RV2, RV3): # RV2 and RV3 are the evidence nodes, we determine the reasoning here based on their relationship
-		# Check for Intercausal relationship 
-		# for i in range(0, len(RV_arr)):
-		# 	if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)):
-		# 		rv_as_root = RV_arr[i]
-		# 		print "INT_CAUS"
-		# 		return (INT_CAUS, rv_as_root)
 
 		# Check for obvious redundancy
 		if (RV1 == RV2):
@@ -302,19 +339,16 @@ class Bayesian_Network(object):
 		elif (RV3.parents.has_key(RV2.name)):
 			return (INT_CAUS, RV3)
 
-
 		# Check for Combined relationship
-		# for i in range(0, len(RV_arr)):
-		# 	if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].children.has_key(RV_arr[(i+2)%3].name)) or (RV_arr[i].children.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)) :
-		# 		rv_as_root = RV_arr[i]
-		# 		print "COMBINED"
-		# 		return (COMBINED, RV_arr[i])
-
 		direction = self.decide_direction_of_reasoning(RV2, RV3)
 		if (direction != SIBLING):
 			print "COM"
-			return (COMBINED, RV1)
+			if len(RV2.children.items()) == 0:
+				return (COMBINED, 2) #RV will represent the lowest node in combined
+			else:
+				return (COMBINED, 3)
 
+		# Neither, this case arises if P (x | p,s)
 		return (NEITHER, None)
 
 
@@ -354,6 +388,7 @@ def construct_bayes_net():
 	BN.calculate_marginal_probabilities()
 
 	print BN.solve_conditional_on_joint_probability(P, D, S, "", "", "")
+	#print BN.solve_conditional_on_joint_probability(D, P, S, "", "~", "")
 
 	return BN
 
