@@ -410,29 +410,38 @@ class Bayesian_Network(object):
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
 		return RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
 
+	def lookup_node(self, a):
+		for x in self.nodes.values():
+			if (x.marginal_probability_name == a.upper()):
+				return x
+		print ("You asked to perform computation on a nonexistent node.")
+		print ("Please try again with a correct bayes network query.")
+		print "------------------------------------"
+		print ""
+		sys.exit(2)
+
+
 	def bayes_network_query(self, flag, a):
+		a = a.replace("/", "|")
+
 		if flag == "-m":
 
 			result = None
 			upper = a.isupper()
 			
 			if (upper):
-				for x in self.nodes.values():
-					if (x.marginal_probability_name == a):
-						result = x.marginal_probability
+				x = self.lookup_node(a)
+				result = x.marginal_probability
 
 				print "Marginal Probability Distribution of", a
 				print a.lower()+":", result, "~"+a.lower()+":", 1-result
 			else:			
 				if "~" in a:
-					for x in self.nodes.values():
-						if (x.marginal_probability_name == a[1].upper()):
-							result = x.marginal_probability
-					result = 1-result
+					x = self.lookup_node(a[1])
+					result = 1-x.marginal_probability
 				else:
-					for x in self.nodes.values():
-						if (x.marginal_probability_name == a.upper()):
-							result = x.marginal_probability
+					x = self.lookup_node(a)
+					result = x.marginal_probability
 				print "Marginal Probability of", a+":", result	
 
 		elif flag == "-p":
@@ -440,16 +449,43 @@ class Bayesian_Network(object):
 			print "New probability of", a[0].lower(), "=", float(a[1:])
 
 		elif flag == "-g":
-			p = a.find("/")
+
+			#Handle upper case distributions yes?
+			
+			p = a.find("|")
 			rv1 = a[:p]
+			rv1status = ""
+			if "~" in rv1:
+				rv1 = rv1[1]
+				rv1status = "~"
+
 			condition_on_rv_arr = []
 			condition_on_rv_status_arr = []
+
 			negate = False
 			for char in a[p+1:]:
 				if char == "~":
 					negate = True
 				else:
 					condition_on_rv_arr.append(char)
+					if negate == True:
+						negate = False
+						condition_on_rv_status_arr.append("~")
+					else:
+						condition_on_rv_status_arr.append("")
+			
+			if len(condition_on_rv_arr) == 1:
+				RV1 = self.lookup_node(rv1)
+				RV2 = self.lookup_node(condition_on_rv_arr[0])
+				print "Probability of", a, "=", self.solve_conditional_probability(RV1, RV2, rv1status, condition_on_rv_status_arr[0])
+			
+			elif len(condition_on_rv_arr) == 2:
+				RV1 = self.lookup_node(rv1)
+				RV2 = self.lookup_node(condition_on_rv_arr[0])
+				RV3 = self.lookup_node(condition_on_rv_arr[1])
+				print "Probability of", a, "=", self.solve_conditional_on_joint_probability(RV1, RV2, RV3, rv1status, condition_on_rv_status_arr[0], condition_on_rv_status_arr[1])
+
+
 
 def construct_bayes_net():
 	P = Node("Pollution", "P")
