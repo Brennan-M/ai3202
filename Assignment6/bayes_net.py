@@ -5,6 +5,8 @@
 #	     Brennan McConnell		 #
 ##########################################
 
+import getopt, sys
+
 NO_REASONING = 0
 SIBLING = 3
 PR = 1
@@ -389,9 +391,25 @@ class Bayesian_Network(object):
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
 		return RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
 
+	def bayes_network_query(self, flag, a):
+		if flag == "-m":
+			for x in self.nodes.values():
+				if (x.marginal_probability_name == a):
+					print x.marginal_probability
+
+	def update_probability(self, arg, newValue):
+		if (arg == "P"):
+			node = self.nodes["Pollution"]
+			node.probs[arg] = newValue
+		elif (arg == "S"):
+			node = self.nodes["Smoker"]
+			node.probs[arg] = newValue
+		self.calculate_marginal_probabilities()
 
 
 
+
+FLAGS = ':g:j:m:p:'
 
 def construct_bayes_net():
 	P = Node("Pollution", "P")
@@ -429,21 +447,44 @@ def construct_bayes_net():
 
 	#print BN.solve_conditional_on_joint_probability(S, D, X, "", "", "")
 	#print BN.solve_conditional_on_joint_probability(X, D, S, "", "", "")
-	print BN.solve_joint_probability_three(P, S, C, "", "", "")
+	#print BN.solve_joint_probability_three(D, X, C, "", "", "")
 	#print BN.solve_conditional_on_joint_probability(P, S, C, "~", "", "")
 	return BN
 
 
 if __name__ == "__main__":
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], FLAGS)
+	except getopt.GetoptError as err:
+		print str(err)
+		sys.exit(2)
+
 	bayes_net = construct_bayes_net()
-#	for node in bayes_net.nodes.values():
-#		print node.marginal_probability_name, ":", round(node.marginal_probability, 4)
 
-
-
-
-
-
-
-
-
+	for o, a in opts:
+		if o in ("-p"):
+			#setting the prior here works if the Bayes net is already built
+			for n in bayes_net.nodes.values():
+				print n.marginal_probability_name, n.marginal_probability
+			bayes_net.update_probability(a[0], float(a[1:]))
+			for n in bayes_net.nodes.values():
+				print n.marginal_probability_name, n.marginal_probability
+		elif o in ("-m"):
+			bayes_net.bayes_network_query(o, a)
+		elif o in ("-g"):
+			print "flag", o
+			print "args", a
+			print type(a)
+			'''you may want to parse a here and pass the left of |
+			and right of | as arguments to calcConditional
+			'''
+			p = a.find("|")
+			print a[:p]
+			print a[p+1:]
+			#calcConditional(a[:p], a[p+1:])
+		elif o in ("-j"):
+			print "flag", o
+			print "args", a
+		else:
+			assert False, "unhandled option"
+	
