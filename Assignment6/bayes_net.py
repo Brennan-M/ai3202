@@ -221,8 +221,6 @@ class Bayesian_Network(object):
 				return 1 - x
 			return x
 			
-		
-
 		#find which variable the other two depend on
 		reasoning = self.determine_reasoning_with_mult_evidence(RV1, RV2, RV3)
 
@@ -265,8 +263,9 @@ class Bayesian_Network(object):
 					RV_root_id = i
 
 			RV_root_parent_evidence_id = None
+
 			if (RV_root_id == 2):
-				RV_root_parent_evidence_id = 3
+				RV_root_parent_evidence_id = 1
 			else:
 				RV_root_parent_evidence_id = 2
 
@@ -384,6 +383,14 @@ class Bayesian_Network(object):
 		# Neither, this case arises if P (x | p,s)
 		return (NEITHER, None)
 
+	def solve_joint_probability_three(self, RV1, RV2, RV3, r1s, r2s, r3s):
+
+		r1_given_r2r3 = self.solve_conditional_on_joint_probability(RV1, RV2, RV3, r1s, r2s, r3s)
+		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
+		return RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
+
+
+
 
 
 def construct_bayes_net():
@@ -421,8 +428,9 @@ def construct_bayes_net():
 	BN.calculate_marginal_probabilities()
 
 	#print BN.solve_conditional_on_joint_probability(S, D, X, "", "", "")
-	print BN.solve_conditional_on_joint_probability(X, D, S, "", "", "")
-
+	#print BN.solve_conditional_on_joint_probability(X, D, S, "", "", "")
+	print BN.solve_joint_probability_three(P, S, C, "", "", "")
+	#print BN.solve_conditional_on_joint_probability(P, S, C, "~", "", "")
 	return BN
 
 
