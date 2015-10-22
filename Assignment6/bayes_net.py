@@ -12,6 +12,8 @@ DR = 2
 INT_CAUS = 4
 COMBINED = 5
 NEITHER = 6
+INHERENTLY_GIVEN = 7
+
 
 class Node(object):
 
@@ -211,29 +213,58 @@ class Bayesian_Network(object):
 	def solve_conditional_on_joint_probability(self, RV1, RV2, RV3, r1s, r2s, r3s): #Signifies multiple evidence
 		RV_arr = [RV1, RV2, RV3]
 		RV_status_arr = [r1s, r2s, r3s]
+
+		# Can we just solve it given initial data (i.e. P(c|s,p) )
+		if (RV1.probs.has_key(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name) or RV1.probs.has_key(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name)): # freebie pretty much, given in initial data
+			return RV1.probs.get(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name, RV1.probs.get(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name, False))
+		
+
 		#find which variable the other two depend on
-		reasoning = self.determine_reasoning_with_mult_evidence(RV_arr)
+		reasoning = self.determine_reasoning_with_mult_evidence(RV1, RV2, RV3)
+
+		if (reasoning[0] == INHERENTLY_GIVEN):
+			if (r1s == RV_status_arr[reasoning[1]-1]):
+				return 1.0
+			return 0.0
 
 		if reasoning[0] == INT_CAUS:
 
-			# Can we just solve it given initial data (i.e. P(c|s, p) )
-			if (RV1.probs.has_key(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name) or RV1.probs.has_key(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name)): # freebie pretty much, given in initial data
-					return RV1.probs.get(r2s+RV2.marginal_probability_name+r3s+RV3.marginal_probability_name, RV1.probs.get(r3s+RV3.marginal_probability_name+r2s+RV2.marginal_probability_name, False))
-
-			RVS_not_root = []
 			RV_root = reasoning[1]
+
+			# CASE 1
+			# If RV1 (P) is conditionally independent from evidence E given evidence Root
+			# Then we don't care about evidence E
+			# ex. P (x | c,s) = P (x|c) or P (s |c,x) = P (s|c)
+
+			if (RV_root == RV2):
+				if (RV2.parents.has_key(RV3.name) and RV2.children.has_key(RV1.name)):
+					return self.solve_conditional_probability(RV1, RV2, r1s, r2s)
+				if (RV2.parents.has_key(RV3.name) and RV3.parents.has_key(RV1.name)):
+					return self.solve_conditional_probability(RV1, RV3, r1s, r3s)
+			elif (RV_root == RV3):
+				if (RV3.parents.has_key(RV2.name) and RV3.children.has_key(RV1.name)):
+					return self.solve_conditional_probability(RV1, RV3, r1s, r3s)
+				if (RV3.parents.has_key(RV2.name) and RV2.parents.has_key(RV1.name)):
+					return self.solve_conditional_probability(RV1, RV2, r1s, r2s)
+
+
+			# CASE 2
+			# If RV1 (P) is conditionally dependent on evidence E given evidence Root
+			# ex. P (P | c,s) 
+			RVS_not_root = []
 			RV_root_id = None
+
 			for i in range(0, len(RV_arr)):
 				if RV_arr[i] != RV_root:
 					RVS_not_root.append(i)
 				else:
 					RV_root_id = i
 
-			RV_explaining_away_id = None
+			RV_root_parent_evidence_id = None
 			if (RV_root_id == 2):
-				RV_explaining_away_id = 3
+				RV_root_parent_evidence_id = 3
 			else:
-				RV_explaining_away_id = 2
+				RV_root_parent_evidence_id = 2
 
 			if (r1s == "~"):
 				probability = 1-RV1.marginal_probability
@@ -242,7 +273,7 @@ class Bayesian_Network(object):
 
 			probability *= RV_root.probs.get(RV_status_arr[RVS_not_root[0]]+RV_arr[RVS_not_root[0]].marginal_probability_name+RV_status_arr[RVS_not_root[1]]+RV_arr[RVS_not_root[1]].marginal_probability_name, RV_root.probs.get(RV_status_arr[RVS_not_root[1]]+RV_arr[RVS_not_root[1]].marginal_probability_name+RV_status_arr[RVS_not_root[0]]+RV_arr[RVS_not_root[0]].marginal_probability_name, False))
 
-			probability /= self.solve_conditional_probability(RV_root, RV_arr[RV_explaining_away_id], RV_status_arr[RV_root_id], RV_status_arr[RV_explaining_away_id])
+			probability /= self.solve_conditional_probability(RV_root, RV_arr[RV_root_parent_evidence_id], RV_status_arr[RV_root_id], RV_status_arr[RV_root_parent_evidence_id])
 			
 		
 			return probability
@@ -251,23 +282,38 @@ class Bayesian_Network(object):
 		elif reasoning[0] == COMBINED:
 			return None
  
-	def determine_reasoning_with_mult_evidence(self, RV_arr):
-		rv_as_root = None
-
+	def determine_reasoning_with_mult_evidence(self, RV1, RV2, RV3): # RV2 and RV3 are the evidence nodes, we determine the reasoning here based on their relationship
 		# Check for Intercausal relationship 
-		for i in range(0, len(RV_arr)):
-			if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)):
-				rv_as_root = RV_arr[i]
-				print "INT_CAUS"
-				return (INT_CAUS, rv_as_root)
+		# for i in range(0, len(RV_arr)):
+		# 	if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)):
+		# 		rv_as_root = RV_arr[i]
+		# 		print "INT_CAUS"
+		# 		return (INT_CAUS, rv_as_root)
+
+		# Check for obvious redundancy
+		if (RV1 == RV2):
+			return (INHERENTLY_GIVEN, 2)
+		elif (RV1 == RV3):
+			return (INHERENTLY_GIVEN, 3)
+
+		# Check for Intercausal relationship
+		if (RV2.parents.has_key(RV3.name)):
+			return (INT_CAUS, RV2)
+		elif (RV3.parents.has_key(RV2.name)):
+			return (INT_CAUS, RV3)
 
 
 		# Check for Combined relationship
-		for i in range(0, len(RV_arr)):
-			if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].children.has_key(RV_arr[(i+2)%3].name)) or (RV_arr[i].children.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)) :
-				rv_as_root = RV_arr[i]
-				print "COMBINED"
-				return (COMBINED, RV_arr[i])
+		# for i in range(0, len(RV_arr)):
+		# 	if (RV_arr[i].parents.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].children.has_key(RV_arr[(i+2)%3].name)) or (RV_arr[i].children.has_key(RV_arr[(i+1)%3].name) and RV_arr[i].parents.has_key(RV_arr[(i+2)%3].name)) :
+		# 		rv_as_root = RV_arr[i]
+		# 		print "COMBINED"
+		# 		return (COMBINED, RV_arr[i])
+
+		direction = self.decide_direction_of_reasoning(RV2, RV3)
+		if (direction != SIBLING):
+			print "COM"
+			return (COMBINED, RV1)
 
 		return (NEITHER, None)
 
@@ -307,7 +353,7 @@ def construct_bayes_net():
 	BN.add_node(D)
 	BN.calculate_marginal_probabilities()
 
-	print BN.solve_conditional_on_joint_probability(P, C, S, "", "", "")
+	print BN.solve_conditional_on_joint_probability(P, D, S, "", "", "")
 
 	return BN
 
