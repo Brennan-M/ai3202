@@ -424,8 +424,7 @@ class Bayesian_Network(object):
 		r1_given_r2r3 = self.solve_conditional_on_joint_probability(RV1, RV2, RV3, r1s, r2s, r3s)
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
 		result = RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
-		if (r3s == "~"):
-			return 1 - result
+
 		return result
 
 
