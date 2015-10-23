@@ -423,7 +423,10 @@ class Bayesian_Network(object):
 		#Fix this for all cases and handle chaining
 		r1_given_r2r3 = self.solve_conditional_on_joint_probability(RV1, RV2, RV3, r1s, r2s, r3s)
 		r2_given_r3 = self.solve_conditional_probability(RV2, RV3, r2s, r3s)
-		result = RV3.marginal_probability * r1_given_r2r3 * r2_given_r3
+		r3 = RV3.marginal_probability
+		if (r3s == "~"):
+			r3 = 1- r3
+		result = r3 * r1_given_r2r3 * r2_given_r3
 
 		return result
 
