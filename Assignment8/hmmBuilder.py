@@ -78,16 +78,26 @@ class HMM(object):
 		print "\n"
 		print "Emission Probabilities"
 		print "---------------------------------------"
+		sortedResults = []
 		for state in self.states.keys():
 			for evidence, value in self.states[state][EMISSION].items():
-				print "P(", evidence, "|", state, ") =", value
+				string = "P( " + evidence + " | " + state + " ) = " + str(value)
+				sortedResults.append(string)
+
+		for line in sorted(sortedResults):
+			print line
 
 		print "\n"
 		print "Transition Probabilities"
 		print "---------------------------------------"
+		sortedResults = []
 		for state in self.states.keys():
 			for stateNext, value in self.states[state][TRANSITION].items():
-				print "P(", stateNext, "|", state, ") =", value
+				string = "P( " + stateNext + " | " + state + " ) = " + str(value)
+				sortedResults.append(string)
+
+		for line in sorted(sortedResults):
+			print line
 
 		print "\n"
 		print "---------------------------------------"
