@@ -73,7 +73,7 @@ class HMM(object):
 		print "Marginal Probabilities"
 		print "---------------------------------------"
 		for state in self.states.keys():
-			print state, ":", self.states[state][MARGINAL][state]
+			print "P(", state, ") = ", self.states[state][MARGINAL][state]
 
 		print "\n"
 		print "Emission Probabilities"
@@ -84,7 +84,7 @@ class HMM(object):
 				string = "P( " + evidence + " | " + state + " ) = " + str(value)
 				sortedResults.append(string)
 
-		for line in sorted(sortedResults):
+		for line in sorted(sortedResults, key=lambda x: x[4]):
 			print line
 
 		print "\n"
@@ -96,7 +96,7 @@ class HMM(object):
 				string = "P( " + stateNext + " | " + state + " ) = " + str(value)
 				sortedResults.append(string)
 
-		for line in sorted(sortedResults):
+		for line in sorted(sortedResults, key=lambda x: x[4]):
 			print line
 
 		print "\n"
