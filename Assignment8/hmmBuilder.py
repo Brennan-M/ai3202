@@ -17,6 +17,7 @@ class HMM(object):
 			self.states[chr(i)] = ({}, {}, {})
 		self.states["_"] = ({}, {}, {})
 
+
 	def buildFromData(self, fileName):
 		f = open(fileName)
 		infoArr = []
@@ -103,13 +104,27 @@ class HMM(object):
 		print "---------------------------------------"
 
 
+	def persistHMM(self):
+	
+		marginal = {}
+		emission = {}
+		transition = {}
+
+		for state in self.states.keys():
+			marginal[state] = self.states[state][MARGINAL][state]
+
+		for state in self.states.keys():
+			for evidence, value in self.states[state][EMISSION].items():
+				emission[(evidence, state)] = value
+
+		for state in self.states.keys():
+			for stateNext, value in self.states[state][TRANSITION].items():
+				transition[(stateNext, state)] = value
+
+		return (marginal, emission, transition)
 
 
-if __name__ == "__main__":
-	hmm = HMM()
-	fname = sys.argv[1]
-	hmm.buildFromData(fname)
-	hmm.printHMM()
+
 
 
 
