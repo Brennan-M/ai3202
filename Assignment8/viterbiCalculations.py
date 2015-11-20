@@ -98,19 +98,23 @@ class viterbi(object):
 		return mismatches/len(self.beforeAndAfterStates)
 
 
+	def formatAndPrint(self, initialErrors, finalErrors):
+		for char in self.beforeAndAfterStates:
+			print char
+		print "\n\n"
+		print "Iintial Error Rate:", (initialErrors * 100), "%"
+		print "Final Error Rate:", (finalErrors * 100), "%"
+
+
 if __name__ == "__main__":
+	
 	V = viterbi("typos20.data", "typos20Test.data")
+	
 	initialErrors = V.calculateErrorRate()
 	V.determineProbableSequence()
 	resultingErrors = V.calculateErrorRate()
 
-	print "Starting Error Rate:", initialErrors
-	print "Final Error Rate:", resultingErrors
-	print "\n\n"
-	print "Final Output..."
-	print "--------------------------------------------------"
-	print "\n\n"
-	print V.correctedText	
+	V.formatAndPrint(initialErrors, resultingErrors)	
 
 
 
